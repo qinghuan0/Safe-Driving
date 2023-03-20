@@ -85,7 +85,7 @@ def preprocess(image_path):
         between 10 and 40, since this is the "sensitivity" to detect the eyes.
         """
         # 在人脸区域中检测眼睛。
-        sensi = 20  # 灵敏度, 数字越大越容易检测到眼睛
+        sensi = 25  # 灵敏度, 数字越大越容易检测到眼睛
         eyes = eye_cascade.detectMultiScale(face, 1.3, sensi)
         i = 0
         for (ex, ey, ew, eh) in eyes:
@@ -112,7 +112,7 @@ def eye_status(image, name, net):  # 该函数接受三个参数，一个图像�
     if actual_status == 0:
         prob = probs.data[:, 1]
 
-    # print(name,classes[actual_status.data], probs.data[:,0] * 100)
+    print(name,classes[actual_status.data], probs.data[:,0] * 100)
     return classes[actual_status.data]  # 返回在classes列表中actual_status索引处的元素。
 
 
@@ -180,6 +180,8 @@ def drow(images, model_name):
                     print('检测到用户闭眼')
                     timerundis = time.time()
                     if ((timerundis - timebasedis) > 1.5):
+                        timebasedis = time.time()
+                        timerundis = time.time()
                         print('用户状态警告，闭眼时间为:' + str(timerundis - timebasedis) + ',当前时间为:' + now_time)
                         image = cv2.imread(current_dir + '/temp-images/display.jpg')
                         state = "Distracted"
@@ -194,7 +196,7 @@ def drow(images, model_name):
                             print('开始播放音频')
                             p.play()
                 else:
-                    print('用户状态良好，停止播放音频')
+                    print('用户状态良好，不播放音频')
                     p.stop()  # 如果眼睛未闭合，则停止播放音频。
 
         # 如果没有检测到人脸或眼睛，则检查自从timebasedrow以来是否已经超过3秒。如果是，则使用OpenCV加载一张预定义的图像，其中包含“昏昏欲睡”的文本，
@@ -205,7 +207,7 @@ def drow(images, model_name):
             # print('timerundrow'+str(timerundrow))
             # print('timebasedrow'+str(timebasedrow))
             print('-------------------------------')
-            if ((timerundrow - timebasedrow) > 5):
+            if ((timerundrow - timebasedrow) > 4):
                 print('用户闭眼:' + str(timerundrow - timebasedrow) + 's，判定为‘危险驾驶’，现在时刻为:' + now_time)
                 # print('Drowsy start run' + str(timerundrow))
                 # print('Drowsy start base' + str(timebasedrow))
@@ -242,7 +244,6 @@ if __name__ == '__main__':
         emailbasetime = time.time()
         num = 0
         while 1:
-            p.play()
             eyess = []
             cface = 0
             state = ""
@@ -257,7 +258,6 @@ if __name__ == '__main__':
             img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
             img = RGB888toRGB565(img)
             img = img.flatten()
-
 
     except:
         video_capture.release()
