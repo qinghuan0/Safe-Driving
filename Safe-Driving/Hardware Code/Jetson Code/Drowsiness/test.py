@@ -35,7 +35,7 @@ emailsendtime = time.time()
 
 face_cascade = cv2.CascadeClassifier(current_dir + '/haar_models/haarcascade_frontalface_default.xml')
 eye_cascade = cv2.CascadeClassifier(current_dir + '/haar_models/haarcascade_eye.xml')
-MyModel = "model_18_64.t7"  # 定义训练好的人眼状态检测模型的文件名。
+MyModel = "BlinkModel.t7"  # 定义训练好的人眼状态检测模型的文件名。
 
 # 定义人眼状态检测模型的输入图像大小和输出类别。
 shape = (24, 24)
@@ -180,9 +180,9 @@ def drow(images, model_name):
                     print('检测到用户闭眼')
                     timerundis = time.time()
                     if ((timerundis - timebasedis) > 1.5):
-                        timebasedis = time.time()
-                        timerundis = time.time()
                         print('用户状态警告，闭眼时间为:' + str(timerundis - timebasedis) + ',当前时间为:' + now_time)
+                        timerundis = time.time()
+                        timebasedis = time.time()
                         image = cv2.imread(current_dir + '/temp-images/display.jpg')
                         state = "Distracted"
                         image = cv2.putText(image, 'Distracted', (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 7, (0, 0, 0), 20,
@@ -191,7 +191,7 @@ def drow(images, model_name):
                                             (255, 255, 255), 10, cv2.LINE_AA)
                         cv2.imwrite(current_dir + '/temp-images/display.jpg', image)
 
-                        # print('Distracted end'+now_time)
+                        print('Distracted end'+now_time)
                         if (not (p.is_playing())):
                             print('开始播放音频')
                             p.play()
@@ -209,9 +209,9 @@ def drow(images, model_name):
             print('-------------------------------')
             if ((timerundrow - timebasedrow) > 4):
                 print('用户闭眼:' + str(timerundrow - timebasedrow) + 's，判定为‘危险驾驶’，现在时刻为:' + now_time)
-                # print('Drowsy start run' + str(timerundrow))
-                # print('Drowsy start base' + str(timebasedrow))
-                # print('*********************************')
+                print('Drowsy start run' + str(timerundrow))
+                print('Drowsy start base' + str(timebasedrow))
+                print('*********************************')
                 if (not (p.is_playing())):
                     print('开始播放音频')
                     p.play()
@@ -234,32 +234,37 @@ def drow(images, model_name):
                     SendEmail().send_email(addr)  # 发送邮件
                     emailbasetime = time.time()
                 timebasedrow = time.time()
-                # print('Drowsy end' + now_time)
+                print('Drowsy end' + now_time)
 
 
-video_capture = cv2.VideoCapture(1)
+video_capture = cv2.VideoCapture(0)
+
+WIDTH = 240
+HEIGHT = 180
+
+def process_image(image, model):
+    cv2.imwrite('temp-images/img.jpg', image)
+    func('temp-images/img.jpg', model)
+    img = cv2.imread('temp-images/display.jpg')
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = cv2.resize(img, (WIDTH, HEIGHT), interpolation=cv2.INTER_AREA)
+    img = RGB888toRGB565(img)
+    img = img.flatten()
+    return img
 
 if __name__ == '__main__':
     try:
         emailbasetime = time.time()
         num = 0
-        while 1:
+        while True:
             eyess = []
             cface = 0
             state = ""
-            ret, img = video_capture.read()  # 从相机读取一帧，返回值 ret 为 True 表示成功读取帧，img 为图像数据。
-            cv2.imwrite(current_dir + '/temp-images/img.jpg', img)
-            func(current_dir + '/temp-images/img.jpg', MyModel)
-            img = cv2.imread(current_dir + '/temp-images/display.jpg')
-            w = 240
-            h = 180
-            dim = (w, h)
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
-            img = RGB888toRGB565(img)
-            img = img.flatten()
+            ret, img = video_capture.read()
+            if not ret:
+                continue
+            img = process_image(img, MyModel)
 
     except:
         video_capture.release()
         print("\nGoodbye")
-
