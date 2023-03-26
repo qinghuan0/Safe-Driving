@@ -79,7 +79,7 @@ class VOCDetection(data.Dataset):
 
     Arguments:
         root (string): filepath to VOCdevkit folder.
-        image_set (string): imageset to use (eg. 'train', 'val', 'test')
+        image_set (string): imageset to use (eg. 'train_bed', 'val', 'test')
         transform (callable, optional): transformation to perform on the
             input image
         target_transform (callable, optional): transformation to perform on the

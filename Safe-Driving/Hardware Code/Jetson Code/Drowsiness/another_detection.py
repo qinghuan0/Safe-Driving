@@ -12,7 +12,7 @@ import json
 import os
 import socket
 import numpy as np
-from train import model
+from train_bed import model
 from sent_email import SendEmail
 import datetime as dt
 from location_get import location_get

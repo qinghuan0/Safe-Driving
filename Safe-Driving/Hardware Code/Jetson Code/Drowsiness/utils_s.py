@@ -130,7 +130,7 @@ def log_sum_exp(x):
 
 def decode(loc, priors, variances):
     """Decode locations from predictions using priors to undo
-    the encoding we did for offset regression at train time.
+    the encoding we did for offset regression at train_bed time.
     Args:
         loc (tensor): location predictions for loc layers,
             Shape: [num_priors,4]
