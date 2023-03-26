@@ -59,7 +59,6 @@ def RGB888toRGB565(img):
 
 # 定义一个预处理函数，它将图像路径作为输入，并使用OpenCV和人脸识别算法检测出输入图像中的人脸和眼睛。
 def preprocess(image_path):
-    timebasedrow = time.time()
     global cface  # 定义一个图像预处理变换，用于将图像转换为PyTorch张量格式。
     transform_test = transforms.Compose([
         transforms.ToTensor()
@@ -246,25 +245,26 @@ def process_image(image, model):
     cv2.imwrite('temp-images/img.jpg', image)
     func('temp-images/img.jpg', model)
     img = cv2.imread('temp-images/display.jpg')
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img = cv2.resize(img, (WIDTH, HEIGHT), interpolation=cv2.INTER_AREA)
-    img = RGB888toRGB565(img)
-    img = img.flatten()
+    # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = cv2.resize(img, (640, 480), interpolation=cv2.INTER_AREA)
+    # img = RGB888toRGB565(img)
+    # img = img.flatten()
     return img
 
 if __name__ == '__main__':
-    try:
-        emailbasetime = time.time()
-        num = 0
-        while True:
-            eyess = []
-            cface = 0
-            state = ""
-            ret, img = video_capture.read()
-            if not ret:
-                continue
-            img = process_image(img, MyModel)
 
-    except:
-        video_capture.release()
-        print("\nGoodbye")
+    emailbasetime = time.time()
+    num = 0
+    while True:
+        eyess = []
+        cface = 0
+        state = ""
+        ret, img = video_capture.read()
+        if not ret:
+            continue
+        img = process_image(img, MyModel)
+        cv2.imshow("111",img)
+        if cv2.waitKey(100) & 0xff == ord('q'):
+            video_capture.release()
+            print("\nGoodbye")
+            break

@@ -11,7 +11,7 @@ def location_get():
     url = f'https://ip.useragentinfo.com/json?ip='+ip
     res = requests.get(url)		# 发送请求
     data = json.loads(res.text)
-    with open('/home/qinghuan/project/AI/yolo/Driving-Guardian/jetson Code/Drowsiness/json.json','w',encoding='utf-8') as file:
+    with open('./report/json.json','w',encoding='utf-8') as file:
         file.write(json.dumps(data,indent=2,ensure_ascii=False))
 
 
