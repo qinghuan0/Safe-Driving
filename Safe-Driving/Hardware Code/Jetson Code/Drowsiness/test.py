@@ -245,10 +245,7 @@ def process_image(image, model):
     cv2.imwrite('temp-images/img.jpg', image)
     func('temp-images/img.jpg', model)
     img = cv2.imread('temp-images/display.jpg')
-    # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img = cv2.resize(img, (640, 480), interpolation=cv2.INTER_AREA)
-    # img = RGB888toRGB565(img)
-    # img = img.flatten()
     return img
 
 if __name__ == '__main__':
