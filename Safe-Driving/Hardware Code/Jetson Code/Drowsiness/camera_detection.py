@@ -14,7 +14,8 @@ import json
 import datetime as dt
 from sent_email import SendEmail
 from location_get import location_get
-
+import vlc
+import os
 
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code " + str(rc))
@@ -30,6 +31,10 @@ client.on_publish = on_publish
 client.connect("iot-06z009za7jb4890.mqtt.iothub.aliyuncs.com", port=1883, keepalive=60)
 
 topic = "/iah3wr181JG/jetson/user/update"
+
+current_dir = os.path.dirname(os.path.realpath(__file__))
+file = 'alarm.mp3'
+p = vlc.MediaPlayer(current_dir + '/' + file)  # 音频
 
 #检测cuda是否可用
 if torch.cuda.is_available():
@@ -58,12 +63,14 @@ img_mean=(104.0,117.0,123.0)
 
 #调用摄像头
 cap=cv2.VideoCapture(0)
+cap.set(6,cv2.VideoWriter.fourcc('M','J','P','G'))
+
 max_fps=0
 
 #保存检测结果的List
 #眼睛和嘴巴都是，张开为‘1’，闭合为‘0’
-list_B=np.ones(15)#眼睛状态List,建议根据fps修改
-list_Y=np.zeros(50)#嘴巴状态list，建议根据fps修改
+list_B=np.ones(12)#眼睛状态List,建议根据fps修改
+list_Y=np.zeros(40)#嘴巴状态list，建议根据fps修改
 list_Y1=np.ones(5)#如果在list_Y中存在list_Y1，则判定一次打哈欠，同上，长度建议修改
 blink_count=0#眨眼计数
 yawn_count=0
@@ -136,7 +143,7 @@ while(True):
 	if num_rec>0:
 		if flag_B:
 			#print(' 1:eye-open')
-			list_B=np.append(list_B,1)#睁眼为‘1’
+			list_B=np.append(list_B,1.05)#睁眼为‘1’
 		else:
 			#print(' 0:eye-closed')
 			list_B=np.append(list_B,0)#闭眼为‘0’
@@ -147,13 +154,14 @@ while(True):
 			list_Y=np.append(list_Y,0)
 		list_Y=np.delete(list_Y,0)
 	else:
-		print('nothing detected')
+		pass
+		# print('nothing detected')
 	#print(list)
 
 	#实时计算PERCLOS
 	perclos=1-np.average(list_B)
-	print('perclos={:f}'.format(perclos))
-	if list_B[13]==1 and list_B[14]==0:
+	# print('perclos={:f}'.format(perclos))
+	if list_B[10]==1 and list_B[11]==0:
 		#如果上一帧为’1‘，此帧为’0‘则判定为眨眼
 		print('----------------眨眼----------------------')
 		blink_count+=1
@@ -163,7 +171,7 @@ while(True):
 		blink_freq=blink_count/blink_T
 		blink_start=time.time()
 		blink_count=0
-		print('blink_freq={:f}'.format(blink_freq))
+		# print('blink_freq={:f}'.format(blink_freq))
 	#检测打哈欠
 	#if Yawn(list_Y,list_Y1):
 	if (list_Y[len(list_Y)-len(list_Y1):]==list_Y1).all():
@@ -177,38 +185,30 @@ while(True):
 		yawn_start=time.time()
 		yawn_count=0
 		# print('yawn_freq={:f}'.fomat(yawn_freq))
-		
-	#此处为判断疲劳部分
-	'''
-	想法1：最简单，但是太影响实时性
-	if(perclos>0.4 or blink_freq<0.25 or yawn_freq>5/60):
-		print('疲劳')
-		if(blink_freq<0.25)
-	else:
-		print('清醒')
-	'''
-	#想法2：
-	if(perclos>0.4):
+
+	if(perclos>0.28):
 		result = client.publish(topic, payload=round(perclos,3), qos=1)
+		p.play()
 		print('疲劳')
-		print('get,result:'+str(result)+str(round(perclos,3)))
+		# print('get,result:'+str(result)+str(round(perclos,3)))
 	elif(blink_freq<0.25):
 		result = client.publish(topic, payload=round(perclos,3), qos=1)
 		print('疲劳')
-		print('get,result:'+str(result)+str(round(perclos,3)))
+		# print('get,result:'+str(result)+str(round(perclos,3)))
 		blink_freq=0.5#如果因为眨眼频率判断疲劳，则初始化眨眼频率
 	elif(yawn_freq>5.0/60):
 		result = client.publish(topic, payload=round(perclos,3), qos=1)
 		print('疲劳')
-		print('get,result:'+str(result)+str(round(perclos,3)))
+		# print('get,result:'+str(result)+str(round(perclos,3)))
 		yawn_freq=0#初始化，同上
 	else:
+		p.stop()
 		print('清醒')
 		if perclos > 0:
 			result = client.publish(topic, payload=round(perclos,3), qos=1)
-			print('get,result:'+str(result)+str(round(perclos,3)))
+			# print('get,result:'+str(result)+str(round(perclos,3)))
 
-	if(perclos >= 0.8 and flag_sent==1):
+	if(perclos >= 0.4 and flag_sent==1):
 		location_get()
 		dataJson = json.load(open('./report/json.json', encoding='UTF-8'))
 		addr = './report/message.txt'
@@ -225,7 +225,7 @@ while(True):
 	if fps>max_fps:
 		max_fps=fps
 	fps_txt='fps:%.2f'%(fps)
-	cv2.putText(img,fps_txt,(0,10),cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255,255,255), 1, 8)
+	# cv2.putText(img,fps_txt,(0,10),cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255,255,255), 1, 8)
 	cv2.imshow("ssd",img)
 	if cv2.waitKey(100) & 0xff == ord('q'):
 		break
